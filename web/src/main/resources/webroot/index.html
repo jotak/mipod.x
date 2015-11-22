@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no"/>
+    <title>Test page</title>
+    <script src="//cdn.jsdelivr.net/sockjs/0.3.4/sockjs.min.js"></script>
+    <script src="external/vertxbus.js"></script>
+    <script type="text/javascript">
+    var eventBus = new vertx.EventBus(window.location + "eventbus");
+    eventBus.onopen = function() {
+      eventBus.registerHandler("info", function(evt) {
+        console.log(evt);
+        var main = document.getElementById("main");
+        var node = document.createElement("p");
+        node.innerHTML = evt.line;
+        main.appendChild(node);
+      });
+      eventBus.publish("init", {});
+    };
+    </script>
+</head>
+<body>
+    <div id="main"></div>
+</body>
+</html>
