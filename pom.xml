@@ -13,15 +13,32 @@
         <module>mpd-connector</module>
         <module>web</module>
         <module>application</module>
+        <module>data-model</module>
     </modules>
 
     <properties>
         <vertx.version>3.0.0</vertx.version>
+        <commons.version>3.4</commons.version>
         <guava.version>15.0</guava.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>com.jotak.mipod</groupId>
+                <artifactId>web</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.jotak.mipod</groupId>
+                <artifactId>mpd-connector</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.jotak.mipod</groupId>
+                <artifactId>data-model</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             <dependency>
                 <groupId>io.vertx</groupId>
                 <artifactId>vertx-core</artifactId>
@@ -36,6 +53,11 @@
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>${guava.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${commons.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

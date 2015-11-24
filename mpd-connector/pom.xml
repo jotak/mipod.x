@@ -16,6 +16,14 @@
             <groupId>io.vertx</groupId>
             <artifactId>vertx-core</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.jotak.mipod</groupId>
+            <artifactId>data-model</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
     </dependencies>
 
 </project>

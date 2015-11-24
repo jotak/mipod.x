@@ -10,18 +10,58 @@
     <script type="text/javascript">
     var eventBus = new vertx.EventBus(window.location + "eventbus");
     eventBus.onopen = function() {
-      eventBus.registerHandler("info", function(evt) {
+      eventBus.registerHandler("WEB_Info", function(evt) {
         console.log(evt);
         var main = document.getElementById("main");
         var node = document.createElement("p");
         node.innerHTML = evt.line;
         main.appendChild(node);
       });
-      eventBus.publish("init", {});
+      eventBus.registerHandler("WEB_Current", function(track) {
+        var main = document.getElementById("playing");
+        var str = "Nothing";
+        if (track) {
+            str = getDisplayName(track);
+        }
+        main.innerHTML = str;
+      });
+      eventBus.publish("WEB_InitConnection", {});
     };
+
+    function getDisplayName(track) {
+        if (track.title !== undefined) {
+            var str = track.title;
+            if (track.track !== undefined) {
+                return (track.track < 10 ? "0" + track.track : String(track.track)) + " - " + str;
+            }
+            return str;
+        }
+        return track.filepath.split("/").pop();
+    }
+
+    function play() {
+        eventBus.publish("WEB_AudioPlay", {});
+    }
+
+    function stop() {
+        eventBus.publish("WEB_AudioStop", {});
+    }
+
+    function prev() {
+        eventBus.publish("WEB_AudioPrev", {});
+    }
+
+    function next() {
+        eventBus.publish("WEB_AudioNext", {});
+    }
     </script>
 </head>
 <body>
     <div id="main"></div>
+    Now playing: <div id="playing"></div>
+    <input type="button" value="Play" onclick="play()">
+    <input type="button" value="Stop" onclick="stop()">
+    <input type="button" value="Prev" onclick="prev()">
+    <input type="button" value="Next" onclick="next()">
 </body>
 </html>

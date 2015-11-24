@@ -9,24 +9,12 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>web</artifactId>
+    <artifactId>data-model</artifactId>
 
     <dependencies>
         <dependency>
-            <groupId>com.jotak.mipod</groupId>
-            <artifactId>data-model</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.jotak.mipod</groupId>
-            <artifactId>mpd-connector</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.vertx</groupId>
-            <artifactId>vertx-web</artifactId>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>

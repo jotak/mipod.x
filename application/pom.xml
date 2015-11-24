@@ -19,12 +19,14 @@
         <dependency>
             <groupId>com.jotak.mipod</groupId>
             <artifactId>web</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.jotak.mipod</groupId>
             <artifactId>mpd-connector</artifactId>
-            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.jotak.mipod</groupId>
+            <artifactId>data-model</artifactId>
         </dependency>
         <dependency>
             <groupId>io.vertx</groupId>
