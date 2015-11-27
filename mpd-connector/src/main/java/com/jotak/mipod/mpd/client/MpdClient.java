@@ -79,7 +79,7 @@ public class MpdClient {
         try (Socket socket = new Socket()) {
             final Pair<BufferedReader, OutputStreamWriter> inOut = connect(socket);
             command(inOut.getRight(), command);
-            return Optional.ofNullable(processor.apply(inOut.getLeft()));
+            return Optional.of(processor.apply(inOut.getLeft()));
         } catch (final IOException e) {
             LOGGER.error("MPD connection error", e);
             return Optional.empty();
