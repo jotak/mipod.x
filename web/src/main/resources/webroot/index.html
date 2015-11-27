@@ -5,63 +5,30 @@
     <meta name="viewport"
           content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=no"/>
     <title>Test page</title>
-    <script src="//cdn.jsdelivr.net/sockjs/0.3.4/sockjs.min.js"></script>
+    <script src="external/react-0.14.3.js"></script>
+    <script src="external/react-dom-0.14.3.js"></script>
+    <script src="external/babel-browser-5.8.23.min.js"></script>
+    <script src="external/sockjs-0.3.4.min.js"></script>
     <script src="external/vertxbus.js"></script>
-    <script type="text/javascript">
-    var eventBus = new vertx.EventBus(window.location + "eventbus");
-    eventBus.onopen = function() {
-      eventBus.registerHandler("WEB_Info", function(evt) {
-        console.log(evt);
-        var main = document.getElementById("main");
-        var node = document.createElement("p");
-        node.innerHTML = evt.line;
-        main.appendChild(node);
-      });
-      eventBus.registerHandler("WEB_Current", function(track) {
-        var main = document.getElementById("playing");
-        var str = "Nothing";
-        if (track) {
-            str = getDisplayName(track);
-        }
-        main.innerHTML = str;
-      });
-      eventBus.publish("WEB_InitConnection", {});
-    };
-
-    function getDisplayName(track) {
-        if (track.title !== undefined) {
-            var str = track.title;
-            if (track.track !== undefined) {
-                return (track.track < 10 ? "0" + track.track : String(track.track)) + " - " + str;
-            }
-            return str;
-        }
-        return track.filepath.split("/").pop();
-    }
-
-    function play() {
-        eventBus.publish("WEB_AudioPlay", {});
-    }
-
-    function stop() {
-        eventBus.publish("WEB_AudioStop", {});
-    }
-
-    function prev() {
-        eventBus.publish("WEB_AudioPrev", {});
-    }
-
-    function next() {
-        eventBus.publish("WEB_AudioNext", {});
-    }
-    </script>
+    <script src="external/q.js"></script>
+    <script src="src/messages.js"></script>
+    <script src="src/controls.js"></script>
+    <script src="src/mipod.js"></script>
 </head>
 <body>
     <div id="main"></div>
+    <div id="example"></div>
+    <script type="text/babel">
+        Mipod = new Mipod();
+        ReactDOM.render(
+            <h1>Hello, world!</h1>,
+            document.getElementById('example')
+        );
+    </script>
     Now playing: <div id="playing"></div>
-    <input type="button" value="Play" onclick="play()">
-    <input type="button" value="Stop" onclick="stop()">
-    <input type="button" value="Prev" onclick="prev()">
-    <input type="button" value="Next" onclick="next()">
+    <input type="button" value="Play" onclick="Mipod.controls.play()">
+    <input type="button" value="Stop" onclick="Mipod.controls.stop()">
+    <input type="button" value="Prev" onclick="Mipod.controls.prev()">
+    <input type="button" value="Next" onclick="Mipod.controls.next()">
 </body>
 </html>
