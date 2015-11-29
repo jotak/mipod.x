@@ -7,28 +7,21 @@
     <title>Test page</title>
     <script src="external/react-0.14.3.js"></script>
     <script src="external/react-dom-0.14.3.js"></script>
-    <script src="external/babel-browser-5.8.23.min.js"></script>
     <script src="external/sockjs-0.3.4.min.js"></script>
     <script src="external/vertxbus.js"></script>
     <script src="external/q.js"></script>
-    <script src="src/messages.js"></script>
-    <script src="src/controls.js"></script>
-    <script src="src/mipod.js"></script>
+    <script src="src/mipod.x.js"></script>
 </head>
 <body>
     <div id="main"></div>
     <div id="example"></div>
-    <script type="text/babel">
-        Mipod = new Mipod();
-        ReactDOM.render(
-            <h1>Hello, world!</h1>,
-            document.getElementById('example')
-        );
+    <script type="text/javascript">
+        mipod = Mipod.start();
     </script>
     Now playing: <div id="playing"></div>
-    <input type="button" value="Play" onclick="Mipod.controls.play()">
-    <input type="button" value="Stop" onclick="Mipod.controls.stop()">
-    <input type="button" value="Prev" onclick="Mipod.controls.prev()">
-    <input type="button" value="Next" onclick="Mipod.controls.next()">
+    <input type="button" value="Play" onclick="mipod.controls.play()">
+    <input type="button" value="Stop" onclick="mipod.controls.stop()">
+    <input type="button" value="Prev" onclick="mipod.controls.prev()">
+    <input type="button" value="Next" onclick="mipod.controls.next()">
 </body>
 </html>

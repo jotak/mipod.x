@@ -2,4 +2,5 @@ target/
 .idea/
 .vertx/
 *.iml
+**/node_modules/
 

@@ -34,4 +34,54 @@
         </dependency>
     </dependencies>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>pl.allegro</groupId>
+                <artifactId>grunt-maven-plugin</artifactId>
+                <version>1.5.0</version>
+                <configuration>
+                    <gruntExecutable>node_modules/grunt-cli/bin/grunt</gruntExecutable>
+                    <runGruntWithNode>true</runGruntWithNode>
+                    <sourceDirectory>${basedir}</sourceDirectory>
+                    <jsSourceDirectory>typescript</jsSourceDirectory>
+                    <gruntBuildDirectory>${project.build.directory}/grunt</gruntBuildDirectory>
+                    <gruntOptions>
+                        <gruntOption>--verbose</gruntOption>
+                    </gruntOptions>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>create-resources</goal>
+                            <goal>npm</goal>
+                            <goal>grunt</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>2.7</version>
+                <executions>
+                    <execution>
+                        <id>copy-resources</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${basedir}/target/classes/webroot/src</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${project.build.directory}/grunt/target/main</directory>
+                                    <filtering>true</filtering>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>
