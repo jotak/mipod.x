@@ -29,6 +29,10 @@
             <artifactId>data-model</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.jotak.mipod</groupId>
+            <artifactId>configuration</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-core</artifactId>
         </dependency>

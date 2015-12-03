@@ -1,21 +1,19 @@
 package com.jotak.mipod.mpd.client;
 
-import com.jotak.mipod.data.audio.Item;
+import com.jotak.mipod.common.vertx.LineStreamer;
+import com.jotak.mipod.configuration.MpdClientConfiguration;
 import com.jotak.mipod.data.audio.Song;
+import io.vertx.core.Vertx;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import org.apache.commons.lang3.tuple.Pair;
+import io.vertx.core.net.NetClient;
+import io.vertx.core.net.NetClientOptions;
+import io.vertx.core.net.NetSocket;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
+import java.util.regex.Pattern;
 
 import static com.jotak.mipod.mpd.client.MpdCommands.*;
 
@@ -27,98 +25,128 @@ public class MpdClient {
     private static final Logger LOGGER = LoggerFactory.getLogger(MpdClient.class);
     private static final int CONNECTION_TIMEOUT = 100000;
     private static final int DEFAULT_BUFFER_SIZE = 4096;
+    private static final int RECONNECT_ATTEMPTS = 3;
+    private static final int RECONNECT_INTERVAL_MS = 2000;
     private static final String MPD_RESPONSE_OK = "OK";
+    private static final Pattern MPD_CONNECT_OK = Pattern.compile("^OK MPD.*$");
 
-    private final InetSocketAddress socketAddress;
+    private final CompletableFuture<ConnectionInstance> connectionCommand;
+    private final CompletableFuture<ConnectionInstance> connectionIdle;
 
-    MpdClient(final String hostname, final int port) {
-        socketAddress = new InetSocketAddress(hostname, port);
+    public MpdClient(final Vertx vertx, final MpdClientConfiguration configuration) {
+        final NetClient netClient = vertx.createNetClient(new NetClientOptions()
+                .setConnectTimeout(CONNECTION_TIMEOUT)
+                .setReceiveBufferSize(DEFAULT_BUFFER_SIZE)
+                .setReconnectAttempts(RECONNECT_ATTEMPTS)
+                .setReconnectInterval(RECONNECT_INTERVAL_MS)
+                .setTcpKeepAlive(true));
+
+        connectionCommand = connect(netClient, configuration);
+        connectionIdle = connect(netClient, configuration);
     }
 
-    public Optional<Song> getCurrent() {
-        return connectAndCommand(CURRENT_SONG, in -> {
-            final List<Item> lst = MpdParser.parseEntries(readToOK(in));
-            if (lst.isEmpty()) {
-                return Optional.<Song>empty();
+    private static CompletableFuture<ConnectionInstance> connect(final NetClient netClient, final MpdClientConfiguration configuration) {
+        LOGGER.info("Connecting to MPD...");
+        final CompletableFuture<NetSocket> netSocketReady = new CompletableFuture<>();
+        netClient.connect(configuration.getPort(), configuration.getHostname(), res -> {
+            if (res.succeeded()) {
+                netSocketReady.complete(res.result());
+                LOGGER.info("Connection successful");
+            } else {
+                LOGGER.error("Connection failure", res.cause());
+                netSocketReady.completeExceptionally(res.cause());
             }
-            final Item item = lst.get(0);
-            if (item instanceof Song) {
-                return Optional.of((Song) lst.get(0));
-            }
-            LOGGER.error("Unexpected response from MPD, not a Song: " + item);
-            return Optional.<Song>empty();
-        }).flatMap(Function.identity());
+        });
+        return netSocketReady
+                .thenApply(netSocket -> new LineStreamer(netSocket, "\n"))
+                .thenCompose(lineStreamer -> lineStreamer.expect(MPD_CONNECT_OK))
+                .thenCombine(netSocketReady, ConnectionInstance::new)
+                .exceptionally(t -> {
+                    LOGGER.error("Initial MPD connection failure: ", t);
+                    return null;
+                });
     }
 
-    public void play() {
-        connectAndCommand(PLAY);
+    public void idleLoop(final String options, final Consumer<String> consumer) {
+        connectionIdle
+                .thenApply(conn -> {
+                    conn.getNetSocket().write(IDLE + " " + options + "\n");
+                    return conn;
+                })
+                .thenCompose(conn -> conn.getLineStreamer().readLine())
+                .thenAccept(s -> {
+                    consumer.accept(s);
+                    idleLoop(options, consumer);
+                }).exceptionally(t -> {
+                    LOGGER.error(t);
+                    idleLoop(options, consumer);
+                    return null;
+                });
     }
 
-    public void stop() {
-        connectAndCommand(STOP);
+    public CompletableFuture<Optional<Song>> getCurrent() {
+        final CompletableFuture<Optional<Song>> fut = new CompletableFuture<>();
+        command(CURRENT_SONG)
+                .thenAccept(connectionInstance -> new MpdParser(
+                        connectionInstance.getLineStreamer(),
+                        item -> {
+                            if (item instanceof Song) {
+                                fut.complete(Optional.of((Song) item));
+                            } else {
+                                LOGGER.error("Unexpected response from MPD, not a Song: " + item);
+                                fut.complete(Optional.<Song>empty());
+                            }
+                        },
+                        aVoid -> {
+                            if (!fut.isDone()) {
+                                fut.complete(Optional.<Song>empty());
+                            }
+                        },
+                        MPD_RESPONSE_OK))
+                .exceptionally(ex -> {
+                    fut.completeExceptionally(ex);
+                    return null;
+                });
+        return fut;
     }
 
-    public void previous() {
-        connectAndCommand(PREV);
+    public CompletableFuture<Void> play() {
+        return command(PLAY).thenAccept(a -> {});
     }
 
-    public void next() {
-        connectAndCommand(NEXT);
+    public CompletableFuture<Void> stop() {
+        return command(STOP).thenAccept(a -> {});
     }
 
-    private void connectAndCommand(final String command) {
-        try (Socket socket = new Socket()) {
-            final Pair<BufferedReader, OutputStreamWriter> inOut = connect(socket);
-            command(inOut.getRight(), command);
-        } catch (final IOException e) {
-            LOGGER.error("MPD connection error", e);
+    public CompletableFuture<Void> previous() {
+        return command(PREV).thenAccept(a -> {});
+    }
+
+    public CompletableFuture<Void> next() {
+        return command(NEXT).thenAccept(a -> {});
+    }
+
+    private CompletableFuture<ConnectionInstance> command(final String command) {
+        return connectionCommand.thenApply(inst -> {
+            inst.getNetSocket().write(command + "\n");
+            return inst;
+        });
+    }
+
+    private static final class ConnectionInstance {
+        private final NetSocket netSocket;
+        private final LineStreamer lineStreamer;
+
+        private ConnectionInstance(final LineStreamer lineStreamer, final NetSocket netSocket) {
+            this.netSocket = netSocket;
+            this.lineStreamer = lineStreamer;
         }
-    }
 
-    private <T> Optional<T> connectAndCommand(final String command, final Function<BufferedReader, T> processor) {
-        try (Socket socket = new Socket()) {
-            final Pair<BufferedReader, OutputStreamWriter> inOut = connect(socket);
-            command(inOut.getRight(), command);
-            return Optional.of(processor.apply(inOut.getLeft()));
-        } catch (final IOException e) {
-            LOGGER.error("MPD connection error", e);
-            return Optional.empty();
+        NetSocket getNetSocket() {
+            return netSocket;
         }
-    }
-
-    private Pair<BufferedReader, OutputStreamWriter> connect(final Socket socket) throws IOException {
-        socket.connect(socketAddress, CONNECTION_TIMEOUT);
-        final InputStreamReader inputStreamReader = new InputStreamReader(socket.getInputStream(), "UTF-8");
-        final BufferedReader in = new BufferedReader(inputStreamReader, DEFAULT_BUFFER_SIZE);
-        final OutputStreamWriter out = new OutputStreamWriter(socket.getOutputStream(), "UTF-8");
-        final String line = in.readLine();
-        if (line == null) {
-            throw new IOException("No response from server");
+        LineStreamer getLineStreamer() {
+            return lineStreamer;
         }
-        if (!line.startsWith(MPD_RESPONSE_OK)) {
-            throw new IOException("Unexpected response from MPD server");
-        }
-        return Pair.of(in, out);
-    }
-
-    private static void command(final OutputStreamWriter out, final String command) throws IOException {
-        out.write(command + "\n");
-        out.flush();
-    }
-
-    private static List<String> readToOK(final BufferedReader in) {
-        final List<String> lines = new ArrayList<>();
-        String line;
-        try {
-            while ((line = in.readLine()) != null) {
-                if (MPD_RESPONSE_OK.equals(line)) {
-                    break;
-                }
-                lines.add(line);
-            }
-        } catch (final IOException e) {
-            LOGGER.error("Could not read from server", e);
-        }
-        return lines;
     }
 }

@@ -9,7 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>mpd-connector</artifactId>
+    <artifactId>common</artifactId>
 
     <dependencies>
         <dependency>
@@ -17,20 +17,8 @@
             <artifactId>vertx-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.jotak.mipod</groupId>
-            <artifactId>data-model</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.jotak.mipod</groupId>
-            <artifactId>common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.jotak.mipod</groupId>
-            <artifactId>configuration</artifactId>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
         </dependency>
     </dependencies>
 

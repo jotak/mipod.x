@@ -1,7 +1,7 @@
 package com.jotak.mipod.mpd;
 
+import com.jotak.mipod.configuration.MpdClientConfiguration;
 import com.jotak.mipod.data.audio.Song;
-import com.jotak.mipod.mpd.client.AsyncMpdClient;
 import com.jotak.mipod.mpd.client.MpdClient;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.eventbus.EventBus;
@@ -23,31 +23,33 @@ public class MpdVerticle extends AbstractVerticle {
     @Override
     public void start() throws Exception {
         LOGGER.info("Starting MpdVerticle");
-        final AsyncMpdClient asyncMpdClient = new AsyncMpdClient(vertx, "localhost", 6600);
+        final MpdClient mpdClient = new MpdClient(vertx, new MpdClientConfiguration("localhost", 6600));
+        final MpdPublisher mpdPublisher = new MpdPublisher(vertx.eventBus());
+        mpdPublisher.connect(mpdClient);
 
-        initializeConsumers(vertx.eventBus(), asyncMpdClient);
+        initializeConsumers(vertx.eventBus(), mpdClient);
     }
 
-    private static void initializeConsumers(final EventBus eventBus, final AsyncMpdClient asyncMpdClient) {
+    private static void initializeConsumers(final EventBus eventBus, final MpdClient mpdClient) {
         eventBus.consumer(GET_CURRENT_TRACK).handler(
-                event -> asyncMpdClient.get(MpdClient::getCurrent)
+                event -> mpdClient.getCurrent()
                         .thenAccept(optTrack -> event.reply(optTrack.map(Song::toJson).orElse(null)))
                         .exceptionally(logException("Could not get current track")));
 
         eventBus.consumer(PLAY).handler(
-                event -> asyncMpdClient.get(MpdClient::play)
+                event -> mpdClient.play()
                         .exceptionally(logException("Could not play")));
 
         eventBus.consumer(STOP).handler(
-                event -> asyncMpdClient.get(MpdClient::stop)
+                event -> mpdClient.stop()
                         .exceptionally(logException("Could not stop")));
 
         eventBus.consumer(PREV).handler(
-                event -> asyncMpdClient.get(MpdClient::previous)
+                event -> mpdClient.previous()
                         .exceptionally(logException("Could not go to previous")));
 
         eventBus.consumer(NEXT).handler(
-                event -> asyncMpdClient.get(MpdClient::next)
+                event -> mpdClient.next()
                         .exceptionally(logException("Could not go to next")));
     }
 

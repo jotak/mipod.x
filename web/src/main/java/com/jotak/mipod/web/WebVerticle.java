@@ -37,12 +37,12 @@ public class WebVerticle extends AbstractVerticle {
             AUDIO_CURRENT
     );
     private static final List<String> TEXT = ImmutableList.of(
-            "This site",
-            "will be about",
-            "Music Player Daemon",
-            "with Vert.x !",
-            "...",
-            "Please, be patient."
+//            "This site",
+//            "will be about",
+//            "Music Player Daemon",
+//            "with Vert.x !",
+//            "...",
+//            "Please, be patient."
     );
 
     public WebVerticle() {

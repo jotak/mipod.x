@@ -107,6 +107,47 @@ public class Song implements Item {
         return id;
     }
 
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        final Song song = (Song) o;
+
+        if (filepath != null ? !filepath.equals(song.filepath) : song.filepath != null) return false;
+        if (lastModified != null ? !lastModified.equals(song.lastModified) : song.lastModified != null) return false;
+        if (time != null ? !time.equals(song.time) : song.time != null) return false;
+        if (artist != null ? !artist.equals(song.artist) : song.artist != null) return false;
+        if (albumArtist != null ? !albumArtist.equals(song.albumArtist) : song.albumArtist != null) return false;
+        if (title != null ? !title.equals(song.title) : song.title != null) return false;
+        if (album != null ? !album.equals(song.album) : song.album != null) return false;
+        if (track != null ? !track.equals(song.track) : song.track != null) return false;
+        if (date != null ? !date.equals(song.date) : song.date != null) return false;
+        if (genre != null ? !genre.equals(song.genre) : song.genre != null) return false;
+        if (composer != null ? !composer.equals(song.composer) : song.composer != null) return false;
+        if (pos != null ? !pos.equals(song.pos) : song.pos != null) return false;
+        return !(id != null ? !id.equals(song.id) : song.id != null);
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = filepath != null ? filepath.hashCode() : 0;
+        result = 31 * result + (lastModified != null ? lastModified.hashCode() : 0);
+        result = 31 * result + (time != null ? time.hashCode() : 0);
+        result = 31 * result + (artist != null ? artist.hashCode() : 0);
+        result = 31 * result + (albumArtist != null ? albumArtist.hashCode() : 0);
+        result = 31 * result + (title != null ? title.hashCode() : 0);
+        result = 31 * result + (album != null ? album.hashCode() : 0);
+        result = 31 * result + (track != null ? track.hashCode() : 0);
+        result = 31 * result + (date != null ? date.hashCode() : 0);
+        result = 31 * result + (genre != null ? genre.hashCode() : 0);
+        result = 31 * result + (composer != null ? composer.hashCode() : 0);
+        result = 31 * result + (pos != null ? pos.hashCode() : 0);
+        result = 31 * result + (id != null ? id.hashCode() : 0);
+        return result;
+    }
+
     public JsonObject toJson() {
         final JsonObject jsonObject = new JsonObject();
         Fields.asList().forEach(
