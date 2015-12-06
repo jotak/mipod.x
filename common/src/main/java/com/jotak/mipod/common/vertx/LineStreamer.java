@@ -1,5 +1,6 @@
 package com.jotak.mipod.common.vertx;
 
+import com.jotak.mipod.common.lambda.Else;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.logging.Logger;
@@ -8,6 +9,7 @@ import io.vertx.core.streams.ReadStream;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 /**
@@ -19,8 +21,8 @@ public class LineStreamer implements ReadStream<String> {
     private static final int MAX_ALLOWED_BUFFER_LINES = 8000;
 
     private final ReadStream<Buffer> source;
-    private final Deque<String> bufferLines = new LinkedList<>();
-    private Optional<Handler<String>> optHandler = Optional.empty();
+    private final Queue<String> bufferLines = new LinkedList<>();
+    private final Queue<Handler<String>> handlers = new LinkedList<>();
     private String previousString = "";
     private boolean paused;
 
@@ -53,15 +55,23 @@ public class LineStreamer implements ReadStream<String> {
 
     @Override
     public ReadStream<String> handler(final Handler<String> handler) {
-        optHandler = Optional.of(handler);
+        handlers.offer(handler);
+        if (handlers.size() == 1) {
+            // Was empty
+            resume();
+        }
+        return this;
+    }
+
+    public ReadStream<String> pollHandler() {
+        handlers.poll();
         return this;
     }
 
     public CompletableFuture<String> readLine() {
         final CompletableFuture<String> fut = new CompletableFuture<>();
-        final Optional<Handler<String>> actualHandler = optHandler;
-        optHandler = Optional.of((Handler<String>) (value) -> {
-            optHandler = actualHandler;
+        handler(value -> {
+            pollHandler();
             fut.complete(value);
         });
         return fut;
@@ -69,9 +79,8 @@ public class LineStreamer implements ReadStream<String> {
 
     public CompletableFuture<LineStreamer> expect(final Pattern pattern) {
         final CompletableFuture<LineStreamer> fut = new CompletableFuture<>();
-        final Optional<Handler<String>> actualHandler = optHandler;
-        optHandler = Optional.of(line -> {
-            optHandler = actualHandler;
+        handler(line -> {
+            pollHandler();
             if (pattern.matcher(line).matches()) {
                 fut.complete(this);
             } else {
@@ -81,16 +90,23 @@ public class LineStreamer implements ReadStream<String> {
         return fut;
     }
 
+    private Else ifHandler(final Consumer<Handler<String>> consumer) {
+        if (!handlers.isEmpty()) {
+            consumer.accept(handlers.peek());
+            return (r) -> {};
+        } else {
+            return Runnable::run;
+        }
+    }
+
     private void processQueue() {
-        optHandler.ifPresent(handler -> {
-            while (!bufferLines.isEmpty()) {
-                final String line = bufferLines.pop();
-                handler.handle(line);
-                if (paused) {
-                    break;
-                }
-            }
-        });
+        if (paused || bufferLines.isEmpty()) {
+            return;
+        }
+        ifHandler(handler -> {
+            handler.handle(bufferLines.poll());
+            processQueue();
+        })._else(this::pause);
     }
 
     @Override
@@ -103,6 +119,7 @@ public class LineStreamer implements ReadStream<String> {
     @Override
     public ReadStream<String> resume() {
         source.resume();
+        paused = false;
         processQueue();
         return this;
     }

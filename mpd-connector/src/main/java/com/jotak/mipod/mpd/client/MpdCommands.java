@@ -25,7 +25,7 @@ public final class MpdCommands {
     static final String PL_INFO = "playlistinfo";
     static final String PL_LOAD = "load";
     static final String PL_DELETE = "rm";
-    static final String PL_SAVE = "clear";
+    static final String PL_SAVE = "save";
     static final String UPDATE = "update";
     // ...
 }

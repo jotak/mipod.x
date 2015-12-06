@@ -1,10 +1,10 @@
 package com.jotak.mipod.application;
 
+import com.jotak.mipod.mpd.MpdVerticle;
 import com.jotak.mipod.web.WebVerticle;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import com.jotak.mipod.mpd.MpdVerticle;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -13,6 +13,9 @@ import java.util.concurrent.CompletableFuture;
  */
 public class MipodX extends AbstractVerticle {
 
+    static {
+        Logging.initialize();
+    }
     private static final Logger LOGGER = LoggerFactory.getLogger(MipodX.class);
 
     @Override

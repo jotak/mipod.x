@@ -69,10 +69,7 @@ class MpdPublisher {
 
     void connect(final MpdClient mpdClient) {
         mpdClient.idleLoop(Joiner.on(' ').join(IDLE_OPTIONS),
-                line -> {
-                    connect(mpdClient);
-                    onIdleOut(mpdClient, line);
-                });
+                line -> onIdleOut(mpdClient, line));
     }
 
     private void onIdleOut(final MpdClient mpdClient, final String subsystem) {
