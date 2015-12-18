@@ -10,19 +10,15 @@
     <script src="external/sockjs-0.3.4.min.js"></script>
     <script src="external/vertxbus.js"></script>
     <script src="external/q.js"></script>
-    <script src="src/mipod.x.js"></script>
 </head>
-<body>
+<body style="background-color: black; color: #007069">
     <div id="main"></div>
-    <div id="example"></div>
+    Now playing: <div id="playing"></div>
+    <script src="src/mipod.x.js"></script>
+    <script src="src/mipod.x.jsx"></script>
     <script type="text/javascript">
         mipod = Mipod.start();
+        initJSX(mipod);
     </script>
-    Now playing: <div id="playing"></div>
-    <input type="button" value="Play" onclick="mipod.controls.play()">
-    <input type="button" value="Stop" onclick="mipod.controls.stop()">
-    <input type="button" value="Prev" onclick="mipod.controls.prev()">
-    <input type="button" value="Next" onclick="mipod.controls.next()">
-    <script src="src/mipod.x.jsx"></script>
 </body>
 </html>
