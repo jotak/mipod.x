@@ -21,15 +21,17 @@ public final class MpdParser implements ReadStream<Item> {
 
     private final LineStreamer lineStreamer;
     private final String endToken;
+    private final Runnable closer;
     private JsonObject json;
     private Handler<Item> itemHandler = a -> {};
     private Handler<Throwable> exceptionHandler = a -> {};
     private Handler<Void> endHandler = a -> {};
     private boolean paused;
 
-    public MpdParser(final LineStreamer lineStreamer, final String endToken) {
+    public MpdParser(final LineStreamer lineStreamer, final String endToken, final Runnable closer) {
         this.endToken = endToken;
         this.lineStreamer = lineStreamer;
+        this.closer = closer;
         lineStreamer.pause();
         lineStreamer.handler(this::parse);
     }
@@ -102,5 +104,12 @@ public final class MpdParser implements ReadStream<Item> {
         if (json != null) {
             itemHandler.handle(Song.fromJson(json));
         }
+    }
+
+    /**
+     * Close the associated NetSocket
+     */
+    public void close() {
+        closer.run();
     }
 }

@@ -1,6 +1,7 @@
 package com.jotak.mipod.mpd.client;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 import com.jotak.mipod.common.vertx.LineStreamer;
 import com.jotak.mipod.configuration.MpdClientConfiguration;
 import com.jotak.mipod.data.audio.Song;
@@ -10,10 +11,10 @@ import io.vertx.core.logging.LoggerFactory;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.NetSocket;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.regex.Pattern;
 
 import static com.jotak.mipod.mpd.client.MpdCommands.*;
@@ -93,22 +94,24 @@ public class MpdClient {
     public CompletableFuture<Optional<Song>> getCurrent() {
         final CompletableFuture<Optional<Song>> fut = new CompletableFuture<>();
         connect()
-                .thenApply(command(CURRENT_SONG))
-                .thenAccept(conn -> new MpdParser(conn.getLineStreamer(), MPD_RESPONSE_OK)
-                        .handler(item -> {
-                            if (item instanceof Song) {
-                                fut.complete(Optional.of((Song) item));
-                            } else {
-                                LOGGER.error("Unexpected response from MPD, not a Song: " + item);
-                                fut.complete(Optional.<Song>empty());
-                            }
-                            conn.netSocket.close();
-                        }).endHandler(aVoid -> {
-                            if (!fut.isDone()) {
-                                fut.complete(Optional.<Song>empty());
-                                conn.netSocket.close();
-                            }
-                        }))
+                .thenAccept(conn -> {
+                    command(conn, CURRENT_SONG);
+                    final MpdParser parser = new MpdParser(conn.getLineStreamer(), MPD_RESPONSE_OK, conn::close);
+                    parser.handler(item -> {
+                        if (item instanceof Song) {
+                            fut.complete(Optional.of((Song) item));
+                        } else {
+                            LOGGER.error("Unexpected response from MPD, not a Song: " + item);
+                            fut.complete(Optional.<Song>empty());
+                        }
+                        parser.close();
+                    }).endHandler(aVoid -> {
+                        if (!fut.isDone()) {
+                            fut.complete(Optional.<Song>empty());
+                            parser.close();
+                        }
+                    });
+                })
                 .exceptionally(ex -> {
                     fut.completeExceptionally(ex);
                     return null;
@@ -142,11 +145,13 @@ public class MpdClient {
 
     public CompletableFuture<Void> add(final String path) {
         return connect()
-                .thenApply(addNoClose(path))
-                .thenAccept(close());
+                .thenAccept(conn -> {
+                    addNoClose(conn, path);
+                    conn.close();
+                });
     }
 
-    private FnConnectionInstance addNoClose(final String path) {
+    private void addNoClose(final ConnectionInstance conn, final String path) {
         final String cmd;
         // Playlists need to be "loaded" instead of "added"
         if (path.endsWith(".m3U")
@@ -156,15 +161,22 @@ public class MpdClient {
         } else {
             cmd = PL_ADD;
         }
-        return command(cmd, "\"" + path + "\"");
+        command(conn, cmd, "\"" + path + "\"");
     }
 
     public CompletableFuture<Void> playEntry(final String path) {
+        return playNoClose(path)
+                .thenAccept(ConnectionInstance::close);
+    }
+
+    private CompletableFuture<ConnectionInstance> playNoClose(final String path) {
         return connect()
-                .thenApply(command(PL_CLEAR))
-                .thenApply(addNoClose(path))
-                .thenApply(command(PLAY))
-                .thenAccept(close());
+                .thenApply(conn -> {
+                    command(conn, PL_CLEAR);
+                    addNoClose(conn, path);
+                    command(conn, PLAY);
+                    return conn;
+                });
     }
 
     public CompletableFuture<Void> playIdx(final int idx) {
@@ -191,21 +203,95 @@ public class MpdClient {
         return commandAndClose(CONSUME, enable ? "1" : "0");
     }
 
+    public CompletableFuture<Void> seek(final int idx, final int posInSong) {
+        return commandAndClose(SEEK, String.valueOf(idx), String.valueOf(posInSong));
+    }
+
+    public CompletableFuture<Void> rmQueue(final int idx) {
+        return commandAndClose(PL_REMOVE_SONG, String.valueOf(idx));
+    }
+
+    public CompletableFuture<Void> savePlaylist(final String name) {
+        // Delete before saving
+        return connect()
+                .thenAccept(conn -> {
+                    command(conn, PL_DELETE, name);
+                    command(conn, PL_SAVE, name);
+                    conn.close();
+                });
+    }
+
+    public CompletableFuture<Void> deletePlaylist(final String name) {
+        return commandAndClose(PL_DELETE, name);
+    }
+
+    /**
+     * Don't forget to close MpdParser
+     */
+    public CompletableFuture<MpdParser> lsInfo(final String dir) {
+        return commandAndParse(LS_INFO, "\"" + dir + "\"");
+    }
+
+    /**
+     * Don't forget to close MpdParser
+     */
+    public CompletableFuture<MpdParser> search(final String mode, final String searchString) {
+        return commandAndParse(SEARCH, mode, "\"" + searchString + "\"");
+    }
+
+    public CompletableFuture<Void> playAll(final List<String> allPaths) {
+        if (allPaths.isEmpty()) {
+            return CompletableFuture.completedFuture(null);
+        }
+        // Play first entry immediately, then add remaining, to avoid latency
+        // TODO: shuffle when random mode?
+        final String first = allPaths.get(0);
+        final List<String> remaining;
+        if (allPaths.size() > 1) {
+            remaining = allPaths.subList(1, allPaths.size());
+        } else {
+            remaining = ImmutableList.of();
+        }
+        return playNoClose(first)
+                .thenAccept(conn -> {
+                    remaining.forEach(path -> addNoClose(conn, path));
+                    conn.close();
+                });
+    }
+
+    public CompletableFuture<Void> addAll(final List<String> allPaths) {
+        return connect()
+                .thenAccept(conn -> {
+                    allPaths.forEach(path -> addNoClose(conn, path));
+                    conn.close();
+                });
+    }
+
     private CompletableFuture<Void> commandAndClose(final String... args) {
         return connect()
-                .thenApply(command(args))
-                .thenAccept(close());
+                .thenAccept(conn -> {
+                    command(conn, args);
+                    conn.close();
+                });
     }
 
-    private FnConnectionInstance command(final String... args) {
-        return inst -> {
-            inst.getNetSocket().write(Joiner.on(' ').join(args) + "\n");
-            return inst;
-        };
+    private CompletableFuture<MpdParser> commandAndParse(final String... args) {
+        final CompletableFuture<MpdParser> fut = new CompletableFuture<>();
+        connect()
+                .thenApply(conn -> {
+                    command(conn, args);
+                    fut.complete(new MpdParser(conn.getLineStreamer(), MPD_RESPONSE_OK, conn::close));
+                    return conn;
+                })
+                .exceptionally(ex -> {
+                    fut.completeExceptionally(ex);
+                    return null;
+                });
+        return fut;
     }
 
-    private static Consumer<ConnectionInstance> close() {
-        return conn -> conn.netSocket.close();
+    private void command(final ConnectionInstance conn, final String... args) {
+        conn.getNetSocket().write(Joiner.on(' ').join(args) + "\n");
     }
 
     private static void error(final String message, final Throwable t) {
@@ -229,7 +315,9 @@ public class MpdClient {
         LineStreamer getLineStreamer() {
             return lineStreamer;
         }
-    }
 
-    private interface FnConnectionInstance extends Function<ConnectionInstance, ConnectionInstance> {}
+        void close() {
+            netSocket.close();
+        }
+    }
 }

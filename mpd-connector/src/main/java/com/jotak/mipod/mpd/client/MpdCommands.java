@@ -26,6 +26,8 @@ public final class MpdCommands {
     static final String PL_LOAD = "load";
     static final String PL_DELETE = "rm";
     static final String PL_SAVE = "save";
+    static final String LS_INFO = "lsinfo";
+    static final String SEARCH = "search";
     static final String UPDATE = "update";
     // ...
 }
