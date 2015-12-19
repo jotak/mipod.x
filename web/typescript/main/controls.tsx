@@ -6,28 +6,17 @@ class ControlsProps {
 
 class ControlsJSX extends React.Component<ControlsProps, any> {
 
+    private clickPlay;
+    private clickStop;
+    private clickPrev;
+    private clickNext;
+
     constructor(props: ControlsProps) {
         super(props);
-        this.clickPlay = this.clickPlay.bind(this);
-        this.clickStop = this.clickStop.bind(this);
-        this.clickPrev = this.clickPrev.bind(this);
-        this.clickNext = this.clickNext.bind(this);
-    }
-
-    private clickPlay() {
-        this.props.controls.play();
-    }
-
-    private clickStop() {
-        this.props.controls.stop();
-    }
-
-    private clickPrev() {
-        this.props.controls.prev();
-    }
-
-    private clickNext() {
-        this.props.controls.next();
+        this.clickPlay = () => props.controls.play();
+        this.clickStop = () => props.controls.stop();
+        this.clickPrev = () => props.controls.prev();
+        this.clickNext = () => props.controls.next();
     }
 
     render() {
