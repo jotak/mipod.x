@@ -8,18 +8,9 @@ var Mipod;
             ebReady.then(function (eventBus) {
                 eventBus.registerHandler("WEB_Info", function (evt) {
                     console.log(evt);
-                    var main = document.getElementById("main");
-                    var node = document.createElement("p");
-                    node.innerHTML = evt.line;
-                    main.appendChild(node);
                 });
                 eventBus.registerHandler("WEB_Current", function (track) {
-                    var main = document.getElementById("playing");
-                    var str = "Nothing";
-                    if (track) {
-                        str = Messages.getDisplayName(track);
-                    }
-                    main.innerHTML = str;
+                    console.log(track);
                 });
             });
         }
