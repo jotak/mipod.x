@@ -8,6 +8,7 @@ class ControlsJSX extends React.Component<ControlsProps, any> {
 
     private clickPlay;
     private clickStop;
+    private clickPause;
     private clickPrev;
     private clickNext;
 
@@ -15,16 +16,21 @@ class ControlsJSX extends React.Component<ControlsProps, any> {
         super(props);
         this.clickPlay = () => props.controls.play();
         this.clickStop = () => props.controls.stop();
+        this.clickPause = () => props.controls.pause();
         this.clickPrev = () => props.controls.prev();
         this.clickNext = () => props.controls.next();
     }
 
     render() {
-        return (<div>
-            <input type="button" value="Play" onClick={this.clickPlay} />
-            <input type="button" value="Stop" onClick={this.clickStop} />
-            <input type="button" value="Prev" onClick={this.clickPrev} />
-            <input type="button" value="Next" onClick={this.clickNext} />
+        var style = {
+            textAlign: "center"
+        };
+        return (<div style={style}>
+            <span onClick={this.clickPlay}><i className="fa fa-play"></i></span>
+            <span onClick={this.clickStop}><i className="fa fa-stop"></i></span>
+            <span onClick={this.clickPause}><i className="fa fa-pause"></i></span>
+            <span onClick={this.clickPrev}><i className="fa fa-fast-backward"></i></span>
+            <span onClick={this.clickNext}><i className="fa fa-fast-forward"></i></span>
         </div>);
     }
 }

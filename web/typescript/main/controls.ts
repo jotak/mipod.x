@@ -18,6 +18,12 @@ module Mipod {
             });
         }
 
+        pause() {
+            this.ebReady.then(eventBus => {
+                eventBus.publish("WEB_AudioPause", {});
+            });
+        }
+
         prev() {
             this.ebReady.then(eventBus => {
                 eventBus.publish("WEB_AudioPrev", {});

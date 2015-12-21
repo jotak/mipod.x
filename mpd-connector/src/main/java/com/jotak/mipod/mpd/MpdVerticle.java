@@ -44,6 +44,10 @@ public class MpdVerticle extends AbstractVerticle {
                 event -> mpdClient.stop()
                         .exceptionally(logException("Could not stop")));
 
+        eventBus.consumer(PAUSE).handler(
+                event -> mpdClient.pause()
+                        .exceptionally(logException("Could not pause")));
+
         eventBus.consumer(PREV).handler(
                 event -> mpdClient.previous()
                         .exceptionally(logException("Could not go to previous")));

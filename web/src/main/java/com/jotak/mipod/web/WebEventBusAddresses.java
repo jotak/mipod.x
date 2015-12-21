@@ -8,6 +8,7 @@ public final class WebEventBusAddresses {
     public static final String INIT_CLIENT_CONN = PREFIX + "InitConnection";
     public static final String AUDIO_PLAY = PREFIX + "AudioPlay";
     public static final String AUDIO_STOP = PREFIX + "AudioStop";
+    public static final String AUDIO_PAUSE = PREFIX + "AudioPause";
     public static final String AUDIO_PREV = PREFIX + "AudioPrev";
     public static final String AUDIO_NEXT = PREFIX + "AudioNext";
     public static final String INFO_MESSAGE = PREFIX + "Info";

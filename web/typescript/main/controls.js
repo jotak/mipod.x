@@ -16,6 +16,11 @@ var Mipod;
                 eventBus.publish("WEB_AudioStop", {});
             });
         };
+        Controls.prototype.pause = function () {
+            this.ebReady.then(function (eventBus) {
+                eventBus.publish("WEB_AudioPause", {});
+            });
+        };
         Controls.prototype.prev = function () {
             this.ebReady.then(function (eventBus) {
                 eventBus.publish("WEB_AudioPrev", {});

@@ -14,6 +14,7 @@ final class AudioDispatcher {
     static void registerEvents(final EventBus eventBus) {
         forward(eventBus, WebEventBusAddresses.AUDIO_PLAY, MpdEventBusAddresses.PLAY);
         forward(eventBus, WebEventBusAddresses.AUDIO_STOP, MpdEventBusAddresses.STOP);
+        forward(eventBus, WebEventBusAddresses.AUDIO_PAUSE, MpdEventBusAddresses.PAUSE);
         forward(eventBus, WebEventBusAddresses.AUDIO_NEXT, MpdEventBusAddresses.NEXT);
         forward(eventBus, WebEventBusAddresses.AUDIO_PREV, MpdEventBusAddresses.PREV);
     }

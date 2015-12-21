@@ -29,6 +29,7 @@ public class WebVerticle extends AbstractVerticle {
             INIT_CLIENT_CONN,
             AUDIO_PLAY,
             AUDIO_STOP,
+            AUDIO_PAUSE,
             AUDIO_NEXT,
             AUDIO_PREV
     );
